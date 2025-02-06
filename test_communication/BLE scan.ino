@@ -1,41 +1,59 @@
 #include <BLEDevice.h>
+#include <BLEUtils.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 
+int scanTime = 10; // Durée du scan en secondes
 BLEScan* pBLEScan;
+
+class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
+    void onResult(BLEAdvertisedDevice advertisedDevice) {
+      Serial.println("------------------------------------");
+      Serial.printf("Adresse MAC: %s\n", advertisedDevice.getAddress().toString().c_str());
+      
+      if (advertisedDevice.haveName()) {
+        Serial.printf("Nom: %s\n", advertisedDevice.getName().c_str());
+      } else {
+        Serial.println("Nom: Non disponible");
+      }
+      
+      Serial.printf("RSSI: %d\n", advertisedDevice.getRSSI());
+      
+      if (advertisedDevice.haveManufacturerData()) {
+        std::string manufacturerData = advertisedDevice.getManufacturerData().c_str();
+        Serial.print("Données fabricant: ");
+        for (int i = 0; i < manufacturerData.length(); i++) {
+          Serial.printf("%02X", (uint8_t)manufacturerData[i]);
+        }
+        Serial.println();
+      }
+      
+      if (advertisedDevice.haveTXPower()) {
+        Serial.printf("TX Power: %d\n", advertisedDevice.getTXPower());
+      }
+      
+      Serial.println("------------------------------------");
+    }
+};
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("ESP32 prêt à scanner les périphériques BLE...");
+  Serial.println("Démarrage du scan des appareils Bluetooth...");
 
-  BLEDevice::init(""); // Initialisation du Bluetooth BLE
-  pBLEScan = BLEDevice::getScan(); // Récupérer une instance de scan
-  pBLEScan->setActiveScan(true);  // Active le scan actif pour plus de détails
-  pBLEScan->setInterval(100);     // Intervalle entre chaque scan (en ms)
-  pBLEScan->setWindow(99);        // Durée d'un scan (en ms)
+  BLEDevice::init("");
+  pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true);
+  pBLEScan->setInterval(100);
+  pBLEScan->setWindow(99);
 }
 
 void loop() {
-  Serial.println("Recherche de périphériques BLE...");
-
-  // Lancer un scan BLE de 5 secondes
-  BLEScanResults foundDevices = pBLEScan->start(5, false);
-
-  Serial.printf("Nombre de périphériques trouvés : %d\n", foundDevices.getCount());
-
-  for (int i = 0; i < foundDevices.getCount(); i++) {
-    BLEAdvertisedDevice device = foundDevices.getDevice(i);
-
-    // Afficher l'adresse, le nom (si disponible) et le RSSI pour chaque périphérique BLE trouvé
-    Serial.print("Adresse : ");
-    Serial.println(device.getAddress().toString().c_str());  // Adresse MAC
-    Serial.print("Nom : ");
-    Serial.println(device.getName().c_str());  // Nom du périphérique (si disponible)
-    Serial.print("RSSI : ");
-    Serial.println(device.getRSSI());  // RSSI du signal
-    Serial.println("------------------------");
-  }
-
-  pBLEScan->clearResults(); // Nettoyer les résultats pour le prochain scan
-  delay(10000); // Pause entre les scans
+  Serial.println("Début du scan...");
+  BLEScanResults* foundDevices = pBLEScan->start(scanTime, false);
+  Serial.print("Appareils trouvés: ");
+  Serial.println(foundDevices->getCount());
+  Serial.println("Scan terminé!");
+  pBLEScan->clearResults();
+  delay(20000000000);
 }
