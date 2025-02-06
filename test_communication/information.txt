@@ -1,0 +1,8 @@
+Ici les codes afin de tester les moyens de communications seront déposés.
+
+LoRa :
+
+Wifi :
+
+Bluetooth :
+
